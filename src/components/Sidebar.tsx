@@ -1,23 +1,26 @@
-import { useState } from 'react'
+'use client'
+
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { motion } from 'framer-motion'
 import {
   LayoutList,
+  Sparkles,
   Calendar,
   BarChart3,
-  FolderOpen,
+  MessageSquare,
   Settings,
   Plus,
-  Sparkles,
-  ChevronDown,
 } from 'lucide-react'
+import { useWorkspace } from '@/hooks/use-workspace'
 
 const navItems = [
-  { label: 'Queue', icon: LayoutList },
-  { label: 'Calendar', icon: Calendar },
-  { label: 'Analytics', icon: BarChart3 },
-  { label: 'Content', icon: FolderOpen },
-  { label: 'AI Studio', icon: Sparkles },
-  { label: 'Settings', icon: Settings },
+  { label: 'Queue', href: '/queue', icon: LayoutList },
+  { label: 'Generate', href: '/generate', icon: Sparkles },
+  { label: 'Calendar', href: '/calendar', icon: Calendar },
+  { label: 'Analytics', href: '/analytics', icon: BarChart3 },
+  { label: 'Replies', href: '/replies', icon: MessageSquare },
+  { label: 'Settings', href: '/settings', icon: Settings },
 ]
 
 const fade = (i: number) => ({
@@ -27,25 +30,25 @@ const fade = (i: number) => ({
 })
 
 export function Sidebar() {
-  const [active, setActive] = useState('Queue')
+  const pathname = usePathname()
+  const { workspaces, active, setActive } = useWorkspace()
 
   return (
     <aside
       style={{
         width: 240,
         minWidth: 240,
-        height: '100%',
+        height: '100vh',
         display: 'flex',
         flexDirection: 'column',
         background: '#FFFFFF',
-        borderRight: '1px solid #F3F4F6',
+        borderRight: '0.5px solid #E5E7EB',
+        position: 'sticky',
+        top: 0,
       }}
     >
       {/* Brand */}
-      <motion.div
-        style={{ padding: '24px 20px 20px' }}
-        {...fade(0)}
-      >
+      <motion.div style={{ padding: '24px 20px 16px' }} {...fade(0)}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <div
             style={{
@@ -64,107 +67,138 @@ export function Sidebar() {
             A
           </div>
           <div>
-            <div style={{ fontSize: 14, fontWeight: 600, color: '#111827', lineHeight: 1 }}>
+            <div
+              style={{
+                fontSize: 14,
+                fontWeight: 600,
+                color: '#111827',
+                lineHeight: 1,
+              }}
+            >
               Aventus
             </div>
-            <div style={{ fontSize: 12, color: '#9CA3AF', marginTop: 2 }}>Creator Studio</div>
+            <div style={{ fontSize: 12, color: '#9CA3AF', marginTop: 2 }}>
+              Creator Studio
+            </div>
           </div>
-          <ChevronDown size={14} color="#9CA3AF" style={{ marginLeft: 'auto' }} />
         </div>
       </motion.div>
 
-      {/* Nav */}
-      <nav style={{ padding: '0 12px', flex: 1 }}>
+      {/* Workspace switcher */}
+      {workspaces.length > 0 && (
+        <motion.div
+          style={{ padding: '0 12px 8px' }}
+          {...fade(1)}
+        >
+          <div
+            style={{
+              fontSize: 11,
+              fontWeight: 500,
+              color: '#9CA3AF',
+              textTransform: 'uppercase',
+              letterSpacing: '0.06em',
+              padding: '0 8px 8px',
+            }}
+          >
+            Workspaces
+          </div>
+          {workspaces.map((ws) => {
+            const isWsActive = ws.id === active?.id
+            return (
+              <div
+                key={ws.id}
+                onClick={() => setActive(ws)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  padding: '6px 8px',
+                  borderRadius: 6,
+                  cursor: 'pointer',
+                  fontSize: 13,
+                  fontWeight: isWsActive ? 500 : 400,
+                  color: isWsActive ? '#111827' : '#6B7280',
+                  background: isWsActive ? '#F3F4F6' : 'transparent',
+                }}
+              >
+                <span
+                  style={{
+                    width: 6,
+                    height: 6,
+                    borderRadius: '50%',
+                    background: isWsActive ? '#22C55E' : '#D1D5DB',
+                    flexShrink: 0,
+                  }}
+                />
+                {ws.name}
+              </div>
+            )
+          })}
+        </motion.div>
+      )}
+
+      {/* Navigation */}
+      <nav style={{ padding: '8px 12px', flex: 1 }}>
         {navItems.map((item, i) => {
           const Icon = item.icon
-          const isActive = item.label === active
+          const isActive = pathname.startsWith(item.href)
           return (
-            <motion.div
+            <Link
               key={item.label}
-              onClick={() => setActive(item.label)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 10,
-                padding: '8px 12px',
-                borderRadius: 8,
-                cursor: 'pointer',
-                fontSize: 13,
-                fontWeight: isActive ? 500 : 400,
-                color: isActive ? '#111827' : '#6B7280',
-                background: isActive ? '#F3F4F6' : 'transparent',
-                marginBottom: 2,
-              }}
-              whileHover={{ background: isActive ? '#F3F4F6' : '#F9FAFB' }}
-              {...fade(i + 1)}
+              href={item.href}
+              style={{ textDecoration: 'none' }}
             >
-              <Icon size={16} strokeWidth={isActive ? 2 : 1.5} />
-              {item.label}
-            </motion.div>
+              <motion.div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 10,
+                  padding: '8px 12px',
+                  borderRadius: 8,
+                  cursor: 'pointer',
+                  fontSize: 13,
+                  fontWeight: isActive ? 500 : 400,
+                  color: isActive ? '#111827' : '#6B7280',
+                  background: isActive ? '#F3F4F6' : 'transparent',
+                  marginBottom: 2,
+                }}
+                whileHover={{ background: isActive ? '#F3F4F6' : '#F9FAFB' }}
+                {...fade(i + 2)}
+              >
+                <Icon size={16} strokeWidth={isActive ? 2 : 1.5} />
+                {item.label}
+              </motion.div>
+            </Link>
           )
         })}
       </nav>
 
-      {/* Platforms */}
-      <div style={{ padding: '0 20px 16px' }}>
-        <div style={{ fontSize: 11, fontWeight: 500, color: '#9CA3AF', textTransform: 'uppercase' as const, letterSpacing: '0.06em', marginBottom: 12 }}>
-          Connected
-        </div>
-        {[
-          { name: 'Instagram', handle: '@aventus', color: '#E4405F' },
-          { name: 'TikTok', handle: '@aventus', color: '#111827' },
-          { name: 'YouTube', handle: 'Aventus', color: '#FF0000' },
-        ].map((p) => (
-          <div
-            key={p.name}
+      {/* Generate Week button */}
+      <div style={{ padding: '0 12px 16px' }}>
+        <Link href="/generate" style={{ textDecoration: 'none' }}>
+          <motion.button
             style={{
+              width: '100%',
               display: 'flex',
               alignItems: 'center',
-              gap: 10,
-              padding: '6px 0',
+              justifyContent: 'center',
+              gap: 6,
+              padding: '10px 0',
+              borderRadius: 8,
+              border: 'none',
+              background: '#111827',
+              color: '#FFFFFF',
               fontSize: 13,
-              color: '#374151',
+              fontWeight: 500,
+              cursor: 'pointer',
             }}
+            whileHover={{ background: '#1F2937' }}
+            whileTap={{ scale: 0.98 }}
           >
-            <span
-              style={{
-                width: 6,
-                height: 6,
-                borderRadius: '50%',
-                background: '#22C55E',
-                flexShrink: 0,
-              }}
-            />
-            <span style={{ fontWeight: 400 }}>{p.name}</span>
-            <span style={{ marginLeft: 'auto', fontSize: 12, color: '#9CA3AF' }}>{p.handle}</span>
-          </div>
-        ))}
-      </div>
-
-      {/* New Post */}
-      <div style={{ padding: '0 12px 16px' }}>
-        <motion.button
-          style={{
-            width: '100%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: 6,
-            padding: '10px 0',
-            borderRadius: 8,
-            border: 'none',
-            background: '#111827',
-            color: '#FFFFFF',
-            fontSize: 13,
-            fontWeight: 500,
-            cursor: 'pointer',
-          }}
-          whileHover={{ background: '#1F2937' }}
-          whileTap={{ scale: 0.98 }}
-        >
-          <Plus size={15} strokeWidth={2} />
-          New Post
-        </motion.button>
+            <Plus size={15} strokeWidth={2} />
+            Generate Week
+          </motion.button>
+        </Link>
       </div>
     </aside>
   )
