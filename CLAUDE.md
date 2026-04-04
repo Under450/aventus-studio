@@ -25,15 +25,18 @@ The UI design agreed with the client uses:
 - Rename the sidebar nav items back to old names
 - Call the company/creator selector "Workspace" — it is "Add Company/Creator"
 - Generate images for all posts at once — images are generated per post on demand only
-- Change the image generator away from FLUX Dev (FAL.ai)
+- Use Pollinations.ai for image generation — it is removed and banned
+- Change the AI model — text generation uses gemma-3-27b-it via Google AI SDK
+- Change image generation — free default is Gemini Imagen (imagen-3.0-generate-002), premium is FLUX Dev (fal-ai/flux/dev)
 
 ### Image generation
-- Provider: FAL.ai FLUX Dev
+- Free: Gemini Imagen (imagen-3.0-generate-002) via Google AI SDK
+- Premium: FLUX Dev (fal-ai/flux/dev) via @fal-ai/client
 - Images are generated ONE AT A TIME per post when the user clicks "Generate image" in the day view
 - NEVER trigger bulk image generation for a whole week automatically
 
 ### AI pipeline for post generation
-Brief → Gemma 4 (prompt enhancement) → Claude (copy writing) → FLUX Dev (image)
+Brief → gemma-3-27b-it (prompt enhancement + copy) → Imagen or FLUX Dev (image, on demand)
 
 ### Terminology
 - "Add Company/Creator" — not "Add Workspace"

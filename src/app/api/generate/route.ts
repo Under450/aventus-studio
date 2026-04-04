@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { validateOrigin } from '@/lib/csrf'
-import { generatePostOutlines } from '@/lib/gemini'
+import { enhanceAndGeneratePost } from '@/lib/gemini'
 import { validateTopic } from '@/lib/validation'
 import { checkAndIncrement } from '@/lib/api-usage'
 
@@ -15,7 +15,7 @@ export async function POST(request: Request) {
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const body = await request.json()
-  const { workspace_id, topic } = body
+  const { workspace_id, topic, platform, tone } = body
 
   if (!workspace_id || typeof workspace_id !== 'string') {
     return NextResponse.json({ error: 'workspace_id is required' }, { status: 400 })
@@ -44,110 +44,53 @@ export async function POST(request: Request) {
 
   const service = createServiceClient()
   const cleanTopic = topic ? validateTopic(topic) : ''
-
-  // Create generation batch
-  const { data: batch, error: batchError } = await service
-    .from('generation_batches')
-    .insert({
-      workspace_id,
-      topic: cleanTopic,
-      status: 'generating_text',
-      total_posts: 21,
-      posts_created: 0,
-      images_completed: 0,
-    })
-    .select('id')
-    .single()
-
-  if (batchError || !batch) {
-    return NextResponse.json({ error: 'Failed to create batch' }, { status: 500 })
-  }
+  const postPlatform = platform || 'instagram'
+  const postTone = tone || ''
 
   try {
-    const outlines = await generatePostOutlines(
-      workspace.niche,
-      workspace.creator_voice,
-      cleanTopic || undefined
+    const generated = await enhanceAndGeneratePost(
+      postPlatform,
+      cleanTopic,
+      postTone,
+      workspace.creator_voice
     )
 
-    // Calculate dates starting from tomorrow
-    const tomorrow = new Date()
-    tomorrow.setDate(tomorrow.getDate() + 1)
-    tomorrow.setHours(0, 0, 0, 0)
-
-    const postRows = outlines.map((outline) => {
-      const postDate = new Date(tomorrow)
-      postDate.setDate(postDate.getDate() + (outline.day - 1))
-
-      // Parse suggested_time (e.g. "9:00 AM")
-      const timeMatch = outline.suggested_time.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i)
-      if (timeMatch) {
-        let hours = parseInt(timeMatch[1], 10)
-        const minutes = parseInt(timeMatch[2], 10)
-        const ampm = timeMatch[3].toUpperCase()
-        if (ampm === 'PM' && hours !== 12) hours += 12
-        if (ampm === 'AM' && hours === 12) hours = 0
-        postDate.setHours(hours, minutes, 0, 0)
-      } else {
-        postDate.setHours(9, 0, 0, 0)
-      }
-
-      return {
+    // Insert single post
+    const { data: post, error: postError } = await service
+      .from('posts')
+      .insert({
         workspace_id,
-        platform: outline.platform as 'instagram' | 'tiktok' | 'youtube',
-        caption: outline.caption || '',
-        hashtags: Array.isArray(outline.hashtags) ? outline.hashtags : [],
+        platform: postPlatform,
+        caption: generated.caption || '',
+        hashtags: Array.isArray(generated.hashtags) ? generated.hashtags : [],
         media_type: 'image' as const,
         status: 'draft' as const,
-        scheduled_at: postDate.toISOString(),
         ai_generated: true,
-        ai_prompt: outline.image_prompt,
-        generation_batch_id: batch.id,
-      }
-    })
-
-    // Batch insert all posts
-    const { data: posts, error: postsError } = await service
-      .from('posts')
-      .insert(postRows)
+        ai_prompt: generated.image_prompt,
+      })
       .select('id')
+      .single()
 
-    if (postsError || !posts) {
-      throw new Error(postsError?.message || 'Failed to insert posts')
+    if (postError || !post) {
+      throw new Error(postError?.message || 'Failed to insert post')
     }
 
-    // Batch insert post_media rows
-    const mediaRows = posts.map((post, i) => ({
+    // Insert post_media row (image pending — generated on demand)
+    await service.from('post_media').insert({
       post_id: post.id,
       media_type: 'image' as const,
       position: 0,
-      ai_image_prompt: outlines[i]?.image_prompt || null,
+      ai_image_prompt: generated.image_prompt || null,
       image_status: 'pending' as const,
-    }))
-
-    await service.from('post_media').insert(mediaRows)
-
-    // Update batch status
-    await service
-      .from('generation_batches')
-      .update({
-        status: 'generating_images',
-        posts_created: posts.length,
-      })
-      .eq('id', batch.id)
+    })
 
     return NextResponse.json({
-      batch_id: batch.id,
-      posts_created: posts.length,
+      post_id: post.id,
+      caption: generated.caption,
+      hashtags: generated.hashtags,
     })
   } catch (err) {
-    // Update batch to failed
     const message = err instanceof Error ? err.message : 'Unknown error'
-    await service
-      .from('generation_batches')
-      .update({ status: 'failed', error_message: message })
-      .eq('id', batch.id)
-
     return NextResponse.json({ error: message }, { status: 500 })
   }
 }
