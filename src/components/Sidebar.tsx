@@ -1,13 +1,14 @@
+'use client';
+
 import { useEffect, useState, useRef } from 'react';
 import { Image, PenLine, CalendarDays, MessageSquare, ChevronDown, Settings2 } from 'lucide-react';
 import type { PanelId } from '../types';
-import { pingPostiz } from '../lib/postiz';
 import { useApp } from '../App';
 
 const NAV_ITEMS: { id: PanelId; label: string; icon: typeof Image; hint: string }[] = [
   { id: 'create-image', label: 'Create Image', icon: Image, hint: 'Design & import' },
   { id: 'create-post', label: 'Create Post', icon: PenLine, hint: 'Caption & hashtags' },
-  { id: 'schedule', label: 'Schedule', icon: CalendarDays, hint: 'Queue to Postiz' },
+  { id: 'schedule', label: 'Schedule', icon: CalendarDays, hint: 'Plan & schedule' },
   { id: 'engagement', label: 'Engagement', icon: MessageSquare, hint: 'Draft replies' },
 ];
 
@@ -18,18 +19,8 @@ interface SidebarProps {
 
 export function Sidebar({ activePanel, onNavigate }: SidebarProps) {
   const { accounts, activeAccount, setActiveAccount, openAccountManager } = useApp();
-  const [connected, setConnected] = useState<boolean | null>(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-
-  // Ping Postiz whenever active account changes
-  useEffect(() => {
-    setConnected(null);
-    const url = activeAccount?.postizUrl;
-    const key = activeAccount?.postizApiKey;
-    if (!url || !key) { setConnected(false); return; }
-    pingPostiz().then(setConnected);
-  }, [activeAccount?.id]);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -226,29 +217,6 @@ export function Sidebar({ activePanel, onNavigate }: SidebarProps) {
         })}
       </nav>
 
-      {/* Footer — Postiz status */}
-      <div
-        className="mx-3 mb-5 rounded-lg px-3 py-3"
-        style={{ backgroundColor: 'var(--studio-panel)', border: '1px solid var(--studio-border)' }}
-      >
-        <div className="flex items-center gap-2">
-          {connected === null ? (
-            <div style={{ width: 7, height: 7, borderRadius: '50%', backgroundColor: 'var(--studio-border-light)' }} />
-          ) : connected ? (
-            <div style={{ width: 7, height: 7, borderRadius: '50%', backgroundColor: '#22c55e', boxShadow: '0 0 0 2px rgba(34,197,94,0.2)' }} />
-          ) : (
-            <div style={{ width: 7, height: 7, borderRadius: '50%', backgroundColor: '#ef4444' }} />
-          )}
-          <span style={{ fontSize: '11px', fontWeight: 500, color: connected === null ? 'var(--studio-ink-4)' : connected ? '#15803d' : '#b91c1c' }}>
-            {connected === null ? 'Connecting…' : connected ? 'Postiz live' : 'Postiz offline'}
-          </span>
-        </div>
-        {!connected && connected !== null && (
-          <p style={{ fontSize: '10px', color: 'var(--studio-ink-3)', marginTop: 4, lineHeight: 1.4 }}>
-            Add Postiz URL in company settings
-          </p>
-        )}
-      </div>
     </aside>
   );
 }

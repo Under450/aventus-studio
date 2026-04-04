@@ -11,7 +11,7 @@ interface AccountManagerProps {
   onActiveChange: (account: Account) => void;
 }
 
-const emptyForm = { name: '', postizUrl: '', postizApiKey: '', claudeApiKey: '' };
+const emptyForm = { name: '', claudeApiKey: '' };
 
 export function AccountManager({ accounts, activeAccount, onClose, onAccountsChange, onActiveChange }: AccountManagerProps) {
   const [form, setForm] = useState(emptyForm);
@@ -33,7 +33,7 @@ export function AccountManager({ accounts, activeAccount, onClose, onAccountsCha
       const existing = accounts.find(a => a.id === editingId)!;
       updated = upsertAccount(accounts, { ...existing, ...form });
     } else {
-      const account = createAccount(form.name.trim(), form.postizUrl.trim(), form.postizApiKey.trim(), form.claudeApiKey.trim());
+      const account = createAccount(form.name.trim(), '', '', form.claudeApiKey.trim());
       updated = upsertAccount(accounts, account);
       // Auto-activate if it's the first account
       if (accounts.length === 0) {
@@ -50,7 +50,7 @@ export function AccountManager({ accounts, activeAccount, onClose, onAccountsCha
 
   const handleEdit = (account: Account) => {
     setEditingId(account.id);
-    setForm({ name: account.name, postizUrl: account.postizUrl, postizApiKey: account.postizApiKey, claudeApiKey: account.claudeApiKey });
+    setForm({ name: account.name, claudeApiKey: account.claudeApiKey });
     setExpandedId(null);
   };
 
@@ -261,8 +261,6 @@ export function AccountManager({ accounts, activeAccount, onClose, onAccountsCha
                           backgroundColor: 'var(--studio-bg)',
                         }}>
                           {[
-                            { label: 'Postiz URL', value: account.postizUrl || '—' },
-                            { label: 'Postiz API Key', value: account.postizApiKey ? '••••••••' + account.postizApiKey.slice(-4) : '—' },
                             { label: 'Claude API Key', value: account.claudeApiKey ? '••••••••' + account.claudeApiKey.slice(-4) : '—' },
                           ].map(({ label, value }) => (
                             <div key={label} style={{ display: 'flex', gap: 8, marginBottom: 5 }}>
@@ -301,29 +299,6 @@ export function AccountManager({ accounts, activeAccount, onClose, onAccountsCha
                   style={{ ...inputStyle, borderColor: errors.name ? '#ef4444' : 'var(--studio-border)' }}
                 />
                 {errors.name && <p style={{ fontSize: '11px', color: '#ef4444', marginTop: 4 }}>{errors.name}</p>}
-              </div>
-
-              {/* Postiz URL */}
-              <div>
-                <label style={labelStyle}>Postiz URL</label>
-                <input
-                  value={form.postizUrl}
-                  onChange={e => setForm(f => ({ ...f, postizUrl: e.target.value }))}
-                  placeholder="http://localhost:3000"
-                  style={inputStyle}
-                />
-              </div>
-
-              {/* Postiz API Key */}
-              <div>
-                <label style={labelStyle}>Postiz API Key</label>
-                <input
-                  type="password"
-                  value={form.postizApiKey}
-                  onChange={e => setForm(f => ({ ...f, postizApiKey: e.target.value }))}
-                  placeholder="Paste your Postiz key"
-                  style={inputStyle}
-                />
               </div>
 
               {/* Claude API Key */}
