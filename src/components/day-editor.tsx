@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { ArrowLeft, Clock, Hash, Check, Sparkles, Loader2 } from 'lucide-react'
+import { ArrowLeft, Clock, Hash, Check, Sparkles, Loader2, RefreshCw } from 'lucide-react'
 import type { Post } from '@/types/database'
 
 const PLATFORMS = [
@@ -257,8 +257,23 @@ export function DayEditor({ date, posts, workspaceId, onBack, onPostCreated }: D
           <div style={{
             fontSize: 11, fontWeight: 500, color: 'var(--studio-ink-3)',
             textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8,
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           }}>
-            Generated caption
+            Caption
+            <button
+              onClick={handleGenerate}
+              disabled={generating}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 4,
+                fontSize: 11, fontWeight: 500, color: 'var(--studio-ink-3)',
+                background: 'none', border: 'none', cursor: generating ? 'not-allowed' : 'pointer',
+                fontFamily: 'var(--studio-sans)', textTransform: 'none', letterSpacing: 'normal',
+                opacity: generating ? 0.5 : 1,
+              }}
+            >
+              <RefreshCw size={11} className={generating ? 'animate-spin' : ''} />
+              Regenerate
+            </button>
           </div>
           <div style={{
             padding: '12px 14px', borderRadius: 8,
