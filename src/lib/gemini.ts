@@ -26,25 +26,29 @@ export async function enhanceAndGeneratePost(
 ): Promise<GeneratedPost> {
   const model = genAI.getGenerativeModel({ model: "gemma-3-27b-it" });
 
-  const prompt = `You are a social media content expert. Generate ONE ${platform} post based on this brief.
+  const prompt = `You are a professional social media copywriter for a creator management agency called Aventus. Write clean, professional, brand-appropriate social media copy.
 
+Platform: ${platform}
 Brief: ${brief}
-Tone: ${tone}
-Creator voice/style: ${creatorVoice}
+Tone: ${tone || 'confident and professional'}
+Creator voice: ${creatorVoice || 'professional, direct, authentic'}
+
+STRICT RULES:
+- NO emojis whatsoever unless the tone explicitly requests them
+- NO exclamation marks
+- NO clichés ("journey", "game-changer", "hustle", "crushing it", "levelling up")
+- NO lifestyle fluff or generic motivational language
+- Write like a real person, not a marketing bot
+- Caption must be appropriate for ${platform} — concise for X, professional for LinkedIn, conversational for Instagram and TikTok
+- Hashtags must be relevant and specific, not generic (#love, #instagood etc)
+- Maximum 5 hashtags for LinkedIn, 20 for Instagram, 10 for TikTok and X
 
 Return ONLY a JSON object with:
-- "caption": string (platform-appropriate caption)
-- "hashtags": string[] (relevant hashtags with # prefix)
-- "image_prompt": string (detailed prompt for generating a visual for this post)
+- "caption": string
+- "hashtags": string[] (with # prefix)
+- "image_prompt": string (professional photography style, no people, no text overlays)
 
-CRITICAL IMAGE PROMPT RULES:
-- Image prompts must be BRAND-SAFE and suitable for all audiences
-- Focus on lifestyle, aesthetics, environments, objects, and abstract concepts
-- NEVER describe people's bodies, clothing details, or suggestive poses
-- Use professional photography style descriptions: lighting, composition, colour palette, mood
-- Think magazine editorial, product photography, or scenic lifestyle shots
-
-Return ONLY the JSON object, no other text.`;
+Return ONLY the JSON. No preamble, no explanation.`;
 
   const result = await model.generateContent(prompt);
   const text = result.response.text();
