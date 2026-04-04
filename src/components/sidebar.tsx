@@ -4,9 +4,8 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { motion } from 'framer-motion'
 import {
-  LayoutList,
-  Sparkles,
   Calendar,
+  Sparkles,
   BarChart3,
   MessageSquare,
   Settings,
@@ -15,9 +14,8 @@ import {
 import { useWorkspace } from '@/hooks/use-workspace'
 
 const navItems = [
-  { label: 'Queue', href: '/queue', icon: LayoutList },
+  { label: 'Calendar', href: '/', icon: Calendar },
   { label: 'Generate', href: '/generate', icon: Sparkles },
-  { label: 'Calendar', href: '/calendar', icon: Calendar },
   { label: 'Analytics', href: '/analytics', icon: BarChart3 },
   { label: 'Replies', href: '/replies', icon: MessageSquare },
   { label: 'Settings', href: '/settings', icon: Settings },
@@ -41,8 +39,8 @@ export function Sidebar() {
         height: '100vh',
         display: 'flex',
         flexDirection: 'column',
-        background: '#FFFFFF',
-        borderRight: '0.5px solid #E5E7EB',
+        background: 'var(--studio-sidebar)',
+        borderRight: '1px solid var(--studio-border-light)',
         position: 'sticky',
         top: 0,
       }}
@@ -55,7 +53,7 @@ export function Sidebar() {
               width: 32,
               height: 32,
               borderRadius: 8,
-              background: '#111827',
+              background: 'var(--studio-ink)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -71,13 +69,13 @@ export function Sidebar() {
               style={{
                 fontSize: 14,
                 fontWeight: 600,
-                color: '#111827',
+                color: 'var(--studio-ink)',
                 lineHeight: 1,
               }}
             >
               Aventus
             </div>
-            <div style={{ fontSize: 12, color: '#9CA3AF', marginTop: 2 }}>
+            <div style={{ fontSize: 12, color: 'var(--studio-ink-3)', marginTop: 2 }}>
               Creator Studio
             </div>
           </div>
@@ -94,7 +92,7 @@ export function Sidebar() {
             style={{
               fontSize: 11,
               fontWeight: 500,
-              color: '#9CA3AF',
+              color: 'var(--studio-ink-3)',
               textTransform: 'uppercase',
               letterSpacing: '0.06em',
               padding: '0 8px 8px',
@@ -117,8 +115,8 @@ export function Sidebar() {
                   cursor: 'pointer',
                   fontSize: 13,
                   fontWeight: isWsActive ? 500 : 400,
-                  color: isWsActive ? '#111827' : '#6B7280',
-                  background: isWsActive ? '#F3F4F6' : 'transparent',
+                  color: isWsActive ? 'var(--studio-ink)' : 'var(--studio-ink-3)',
+                  background: isWsActive ? 'var(--studio-panel)' : 'transparent',
                 }}
               >
                 <span
@@ -126,7 +124,7 @@ export function Sidebar() {
                     width: 6,
                     height: 6,
                     borderRadius: '50%',
-                    background: isWsActive ? '#22C55E' : '#D1D5DB',
+                    background: isWsActive ? 'var(--studio-accent)' : 'var(--studio-border-light)',
                     flexShrink: 0,
                   }}
                 />
@@ -141,7 +139,9 @@ export function Sidebar() {
       <nav style={{ padding: '8px 12px', flex: 1 }}>
         {navItems.map((item, i) => {
           const Icon = item.icon
-          const isActive = pathname.startsWith(item.href)
+          const isActive = item.href === '/'
+            ? pathname === '/'
+            : pathname.startsWith(item.href)
           return (
             <Link
               key={item.label}
@@ -158,14 +158,18 @@ export function Sidebar() {
                   cursor: 'pointer',
                   fontSize: 13,
                   fontWeight: isActive ? 500 : 400,
-                  color: isActive ? '#111827' : '#6B7280',
-                  background: isActive ? '#F3F4F6' : 'transparent',
+                  color: isActive ? '#FFFFFF' : 'var(--studio-ink-2)',
+                  background: isActive ? 'var(--studio-ink)' : 'transparent',
                   marginBottom: 2,
                 }}
-                whileHover={{ background: isActive ? '#F3F4F6' : '#F9FAFB' }}
+                whileHover={{ background: isActive ? 'var(--studio-ink)' : 'var(--studio-border-light)' }}
                 {...fade(i + 2)}
               >
-                <Icon size={16} strokeWidth={isActive ? 2 : 1.5} />
+                <Icon
+                  size={16}
+                  strokeWidth={isActive ? 2 : 1.5}
+                  color={isActive ? '#FFFFFF' : 'var(--studio-ink-3)'}
+                />
                 {item.label}
               </motion.div>
             </Link>
@@ -173,7 +177,7 @@ export function Sidebar() {
         })}
       </nav>
 
-      {/* Generate Week button */}
+      {/* Weekly generation button */}
       <div style={{ padding: '0 12px 16px' }}>
         <Link href="/generate" style={{ textDecoration: 'none' }}>
           <motion.button
@@ -186,17 +190,17 @@ export function Sidebar() {
               padding: '10px 0',
               borderRadius: 8,
               border: 'none',
-              background: '#111827',
-              color: '#FFFFFF',
+              background: 'var(--studio-accent)',
+              color: 'var(--studio-ink)',
               fontSize: 13,
-              fontWeight: 500,
+              fontWeight: 600,
               cursor: 'pointer',
             }}
-            whileHover={{ background: '#1F2937' }}
+            whileHover={{ opacity: 0.9 }}
             whileTap={{ scale: 0.98 }}
           >
             <Plus size={15} strokeWidth={2} />
-            Generate Week
+            Weekly Generation
           </motion.button>
         </Link>
       </div>

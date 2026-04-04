@@ -7,12 +7,17 @@ A social media content creation and scheduling tool for Aventus creator manageme
 
 ### Current design — DO NOT REVERT
 The UI design agreed with the client uses:
-- Dark navy sidebar (#0d1117)
-- Amber (#f0a500) as the primary accent colour
+- Warm off-white background (#faf8f5) — NOT pure white
+- Warm sidebar (#f7f5f1) with light border (#e0ddd8)
+- Lime green accent (#c9f264) for primary buttons and active indicators
+- Black (#0f0f0d) for active nav items, ink text
+- Geist for body text, Instrument Serif for headings
 - Month calendar as the homepage (full grid, Mon–Sun, week numbers on left)
 - Click a day → opens day editor panel
 - Click W## → opens weekly generation wizard
 - Right panel with Daily/Weekly toggle and platform checkboxes
+- NO dark navy (#0d1117) — that was removed
+- NO amber (#f0a500) — that was removed
 
 ### DO NOT
 - Revert to any previous design — the Queue page layout is scrapped

@@ -1,4 +1,5 @@
 import { Sidebar } from "@/components/sidebar";
+import { RightPanel } from "@/components/right-panel";
 
 export default function AppLayout({
   children,
@@ -8,7 +9,10 @@ export default function AppLayout({
   return (
     <div style={{ display: "flex", minHeight: "100vh" }}>
       <Sidebar />
-      <main style={{ flex: 1, minHeight: "100vh" }}>{children}</main>
+      <main style={{ flex: 1, minHeight: "100vh", background: "var(--studio-bg)" }}>
+        {children}
+      </main>
+      <RightPanel />
     </div>
   );
 }
