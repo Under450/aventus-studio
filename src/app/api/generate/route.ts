@@ -88,6 +88,7 @@ export async function POST(request: Request) {
       post_id: post.id,
       caption: generated.caption,
       hashtags: generated.hashtags,
+      image_prompt: generated.image_prompt,
     })
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown error'
