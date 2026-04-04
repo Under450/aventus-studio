@@ -275,19 +275,21 @@ export function DayEditor({ date, posts, workspaceId, onBack, onPostCreated }: D
               Regenerate
             </button>
           </div>
-          <div style={{
-            padding: '12px 14px', borderRadius: 8,
-            border: '1px solid var(--studio-accent)',
-            background: 'var(--studio-panel)',
-          }}>
-            <p style={{ fontSize: 13, color: 'var(--studio-ink)', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>
-              {generatedCaption}
-            </p>
-          </div>
+          <textarea
+            value={generatedCaption}
+            onChange={(e) => setGeneratedCaption(e.target.value)}
+            style={{
+              width: '100%', minHeight: 120, padding: '12px 14px',
+              borderRadius: 8, border: '1px solid var(--studio-accent)',
+              background: 'var(--studio-panel)', color: 'var(--studio-ink)',
+              fontSize: 13, fontFamily: 'var(--studio-sans)',
+              lineHeight: 1.6, resize: 'vertical', outline: 'none',
+            }}
+          />
         </div>
       )}
 
-      {/* 4. Generated hashtags display */}
+      {/* 4. Generated hashtags (editable) */}
       {generatedHashtags.length > 0 && (
         <div style={{ marginBottom: 16 }}>
           <div style={{
@@ -298,21 +300,19 @@ export function DayEditor({ date, posts, workspaceId, onBack, onPostCreated }: D
             <Hash size={10} />
             Hashtags
           </div>
-          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-            {generatedHashtags.map((tag) => (
-              <span
-                key={tag}
-                style={{
-                  fontSize: 12, fontWeight: 500, padding: '4px 10px',
-                  borderRadius: 100, background: 'var(--studio-sidebar)',
-                  border: '0.5px solid var(--studio-border-light)',
-                  color: 'var(--studio-ink-2)',
-                }}
-              >
-                {tag}
-              </span>
-            ))}
-          </div>
+          <textarea
+            value={generatedHashtags.join(' ')}
+            onChange={(e) => setGeneratedHashtags(
+              e.target.value.split(/\s+/).filter((t) => t.length > 0)
+            )}
+            style={{
+              width: '100%', minHeight: 60, padding: '10px 12px',
+              borderRadius: 8, border: '1px solid var(--studio-border-light)',
+              background: 'var(--studio-panel)', color: 'var(--studio-ink-2)',
+              fontSize: 12, fontFamily: 'var(--studio-sans)',
+              lineHeight: 1.6, resize: 'vertical', outline: 'none',
+            }}
+          />
         </div>
       )}
 
