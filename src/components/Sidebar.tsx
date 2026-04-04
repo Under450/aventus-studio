@@ -84,7 +84,7 @@ export function Sidebar() {
         </div>
       </motion.div>
 
-      {/* Company/Creator switcher */}
+      {/* Workspace switcher */}
       {workspaces.length > 0 && (
         <motion.div
           style={{ padding: '0 12px 8px' }}
@@ -100,7 +100,7 @@ export function Sidebar() {
               padding: '0 8px 8px',
             }}
           >
-            COMPANIES / CREATORS
+            Workspaces
           </div>
           {workspaces.map((ws) => {
             const isWsActive = ws.id === active?.id
