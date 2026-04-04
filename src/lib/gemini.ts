@@ -16,7 +16,7 @@ export async function generatePostOutlines(
   creatorVoice: string,
   topic?: string
 ): Promise<PostOutline[]> {
-  const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-lite" });
+  const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
   const topicLine = topic ? `Focus on this topic: ${topic}` : "";
 
@@ -33,6 +33,14 @@ Return ONLY a JSON array with exactly 21 objects. Each object must have:
 - "hashtags": string[] (relevant hashtags with # prefix)
 - "suggested_time": string (e.g. "9:00 AM")
 - "image_prompt": string (detailed prompt for generating a visual for this post)
+
+CRITICAL IMAGE PROMPT RULES:
+- Image prompts must be BRAND-SAFE and suitable for all audiences
+- Focus on lifestyle, aesthetics, environments, objects, and abstract concepts
+- NEVER describe people's bodies, clothing details, or suggestive poses
+- Use professional photography style descriptions: lighting, composition, colour palette, mood
+- Think magazine editorial, product photography, or scenic lifestyle shots
+- Examples of good prompts: "Flat lay of luxury skincare products on marble with golden hour light", "Aerial view of a modern gym with natural lighting", "Minimalist workspace with coffee and notebook, soft morning light"
 
 Return ONLY the JSON array, no other text.`;
 
@@ -52,51 +60,12 @@ export async function generateImageBuffer(
   prompt: string
 ): Promise<Buffer | null> {
   try {
-    // Try Imagen 3 via generateImages
-    const imagenModel = genAI.getGenerativeModel({
-      model: "imagen-3.0-generate-002",
-    });
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    if (typeof (imagenModel as any).generateImages === "function") {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const result = await (imagenModel as any).generateImages({
-        prompt,
-        config: { numberOfImages: 1, outputMimeType: "image/png" },
-      });
-
-      if (result?.images?.[0]?.data) {
-        return Buffer.from(result.images[0].data, "base64");
-      }
-    }
-
-    // Fallback: use generateContent with image response mime type
-    const fallbackModel = genAI.getGenerativeModel({
-      model: "gemini-2.0-flash-exp",
-    });
-
-    const result = await fallbackModel.generateContent({
-      contents: [
-        {
-          role: "user",
-          parts: [{ text: `Generate an image: ${prompt}` }],
-        },
-      ],
-      generationConfig: {
-        responseMimeType: "image/png",
-      },
-    });
-
-    const parts = result.response.candidates?.[0]?.content?.parts;
-    if (parts) {
-      for (const part of parts) {
-        if (part.inlineData?.data) {
-          return Buffer.from(part.inlineData.data, "base64");
-        }
-      }
-    }
-
-    return null;
+    // Pollinations.ai — free, no API key, no region restrictions
+    const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=1080&height=1080&nologo=true`;
+    const response = await fetch(url);
+    if (!response.ok) return null;
+    const arrayBuffer = await response.arrayBuffer();
+    return Buffer.from(arrayBuffer);
   } catch {
     return null;
   }
@@ -113,7 +82,7 @@ export async function regenerateCaption(
   niche: string,
   creatorVoice: string
 ): Promise<RegeneratedCaption> {
-  const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-lite" });
+  const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
   const prompt = `You are a social media content expert. Rewrite this ${platform} caption with a fresh angle.
 

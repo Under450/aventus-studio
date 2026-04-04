@@ -25,7 +25,7 @@ export function GenerateForm() {
     return (
       <div className="mx-auto max-w-[560px] px-6 py-12 text-center">
         <p className="text-sm text-[#6B7280]">
-          No workspace found.{' '}
+          No company/creator found.{' '}
           <a href="/settings" className="text-[#1D4ED8] underline">
             Create one in Settings
           </a>{' '}
@@ -87,7 +87,7 @@ export function GenerateForm() {
             style={{ borderWidth: '0.5px' }}
           />
           <p className="mt-1.5 text-xs text-[#9CA3AF]">
-            Leave blank to use your workspace niche: <span className="italic">{active.niche}</span>
+            Leave blank to use your default niche: <span className="italic">{active.niche}</span>
           </p>
         </div>
 

@@ -13,7 +13,7 @@ export async function POST(request: Request) {
   // Find pending images (max 5 per run)
   const { data: pendingMedia, error: fetchError } = await supabase
     .from("post_media")
-    .select("id, post_id, ai_image_prompt, batch_id")
+    .select("id, post_id, ai_image_prompt")
     .eq("image_status", "pending")
     .limit(5);
 
@@ -28,133 +28,105 @@ export async function POST(request: Request) {
     return NextResponse.json({ processed: 0 });
   }
 
-  // Mark all as 'generating' immediately
-  const mediaIds = pendingMedia.map((m) => m.id);
+  // Mark all as 'generating'
   await supabase
     .from("post_media")
     .update({ image_status: "generating" })
-    .in("id", mediaIds);
+    .in("id", pendingMedia.map((m) => m.id));
 
   // Process in parallel
   const results = await Promise.allSettled(
     pendingMedia.map(async (media) => {
-      // Check rate limit
       const usage = await checkAndIncrement("gemini_imagen");
       if (!usage.allowed) {
-        // Set back to pending for retry next run
-        await supabase
-          .from("post_media")
-          .update({ image_status: "pending" })
-          .eq("id", media.id);
+        await supabase.from("post_media").update({ image_status: "pending" }).eq("id", media.id);
         return "skipped" as const;
       }
 
-      // Validate prompt exists
       if (!media.ai_image_prompt) {
-        await supabase
-          .from("post_media")
-          .update({ image_status: "failed" })
-          .eq("id", media.id);
+        await supabase.from("post_media").update({ image_status: "failed" }).eq("id", media.id);
         return "failed" as const;
       }
 
-      // Generate image
       const buffer = await generateImageBuffer(media.ai_image_prompt);
       if (!buffer) {
-        await supabase
-          .from("post_media")
-          .update({ image_status: "failed" })
-          .eq("id", media.id);
+        await supabase.from("post_media").update({ image_status: "failed" }).eq("id", media.id);
         return "failed" as const;
       }
 
-      // Upload to Supabase Storage
       const storagePath = `posts/${media.post_id}/${media.id}.png`;
       const { error: uploadError } = await supabase.storage
         .from("media")
-        .upload(storagePath, buffer, {
-          contentType: "image/png",
-          upsert: true,
-        });
+        .upload(storagePath, buffer, { contentType: "image/png", upsert: true });
 
       if (uploadError) {
-        await supabase
-          .from("post_media")
-          .update({ image_status: "failed" })
-          .eq("id", media.id);
+        await supabase.from("post_media").update({ image_status: "failed" }).eq("id", media.id);
         return "failed" as const;
       }
 
-      // Get public URL and update record
-      const {
-        data: { publicUrl },
-      } = supabase.storage.from("media").getPublicUrl(storagePath);
-
-      await supabase
-        .from("post_media")
-        .update({ image_status: "completed", media_url: publicUrl })
-        .eq("id", media.id);
-
+      const { data: { publicUrl } } = supabase.storage.from("media").getPublicUrl(storagePath);
+      await supabase.from("post_media").update({ image_status: "completed", media_url: publicUrl }).eq("id", media.id);
       return "completed" as const;
     })
   );
 
-  // Count results
   let completed = 0;
   let failed = 0;
-  for (const result of results) {
-    if (result.status === "fulfilled") {
-      if (result.value === "completed") completed++;
-      if (result.value === "failed") failed++;
+  for (const r of results) {
+    if (r.status === "fulfilled") {
+      if (r.value === "completed") completed++;
+      if (r.value === "failed") failed++;
     } else {
       failed++;
     }
   }
 
-  // Update generation_batch statuses
-  const batchIds = [
-    ...new Set(
-      pendingMedia.map((m) => m.batch_id).filter(Boolean) as string[]
-    ),
-  ];
+  // Update generation_batch statuses via posts table
+  const postIds = [...new Set(pendingMedia.map((m) => m.post_id))];
+  const batchIds = new Set<string>();
+
+  for (const postId of postIds) {
+    const { data: post } = await supabase
+      .from("posts")
+      .select("generation_batch_id")
+      .eq("id", postId)
+      .single();
+    if (post?.generation_batch_id) batchIds.add(post.generation_batch_id);
+  }
 
   for (const batchId of batchIds) {
-    const { data: batchMedia } = await supabase
+    // Get all post IDs in this batch
+    const { data: batchPosts } = await supabase
+      .from("posts")
+      .select("id")
+      .eq("generation_batch_id", batchId);
+    if (!batchPosts) continue;
+
+    // Get all media for those posts
+    const { data: allMedia } = await supabase
       .from("post_media")
       .select("image_status")
-      .eq("batch_id", batchId);
+      .in("post_id", batchPosts.map((p) => p.id));
+    if (!allMedia) continue;
 
-    if (!batchMedia) continue;
-
-    const hasPending = batchMedia.some(
+    const hasPending = allMedia.some(
       (m) => m.image_status === "pending" || m.image_status === "generating"
     );
-    const hasFailed = batchMedia.some((m) => m.image_status === "failed");
-    const completedCount = batchMedia.filter(
-      (m) => m.image_status === "completed"
-    ).length;
+    const hasFailed = allMedia.some((m) => m.image_status === "failed");
+    const doneCount = allMedia.filter((m) => m.image_status === "completed").length;
 
     if (!hasPending) {
-      // All done — set final status
       await supabase
         .from("generation_batches")
-        .update({
-          status: hasFailed ? "partial" : "completed",
-          images_completed: completedCount,
-        })
+        .update({ status: hasFailed ? "partial" : "completed", images_completed: doneCount })
         .eq("id", batchId);
     } else {
-      // Still in progress — just update count
       await supabase
         .from("generation_batches")
-        .update({ images_completed: completedCount })
+        .update({ images_completed: doneCount })
         .eq("id", batchId);
     }
   }
 
-  return NextResponse.json({
-    processed: pendingMedia.length,
-    completed,
-    failed,
-  });
+  return NextResponse.json({ processed: pendingMedia.length, completed, failed });
 }

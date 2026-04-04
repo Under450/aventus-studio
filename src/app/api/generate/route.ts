@@ -95,8 +95,8 @@ export async function POST(request: Request) {
       return {
         workspace_id,
         platform: outline.platform as 'instagram' | 'tiktok' | 'youtube',
-        caption: outline.caption,
-        hashtags: outline.hashtags,
+        caption: outline.caption || '',
+        hashtags: Array.isArray(outline.hashtags) ? outline.hashtags : [],
         media_type: 'image' as const,
         status: 'draft' as const,
         scheduled_at: postDate.toISOString(),

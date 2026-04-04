@@ -37,7 +37,7 @@ export function SettingsPage() {
   }
 
   async function handleDelete(id: string, wsName: string) {
-    if (!confirm(`Delete workspace "${wsName}"? Scheduled posts will be reverted to drafts.`)) return
+    if (!confirm(`Delete "${wsName}"? Scheduled posts will be reverted to drafts.`)) return
     setDeletingId(id)
     try {
       const res = await fetch(`/api/workspaces/${id}`, { method: 'DELETE' })
@@ -88,7 +88,7 @@ export function SettingsPage() {
       {/* New Workspace Form */}
       <div style={{ ...cardStyle, marginBottom: 24 }}>
         <h2 style={{ fontSize: 15, fontWeight: 500, color: '#111827', marginBottom: 16 }}>
-          New Workspace
+          New Company/Creator
         </h2>
         <form onSubmit={handleCreate}>
           <div style={{ marginBottom: 12 }}>
@@ -145,10 +145,10 @@ export function SettingsPage() {
       {/* Workspaces List */}
       <div>
         <h2 style={{ fontSize: 15, fontWeight: 500, color: '#111827', marginBottom: 12 }}>
-          Workspaces
+          Companies / Creators
         </h2>
         {workspaces.length === 0 && (
-          <p style={{ fontSize: 13, color: '#9CA3AF' }}>No workspaces yet.</p>
+          <p style={{ fontSize: 13, color: '#9CA3AF' }}>No companies or creators yet.</p>
         )}
         {workspaces.map((ws) => (
           <div
@@ -174,7 +174,7 @@ export function SettingsPage() {
             <button
               onClick={() => handleDelete(ws.id, ws.name)}
               disabled={deletingId === ws.id}
-              title="Delete workspace"
+              title="Delete company/creator"
               style={{
                 background: 'none',
                 border: 'none',
