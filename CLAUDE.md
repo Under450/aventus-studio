@@ -9,7 +9,7 @@ A social media content creation and scheduling tool for Aventus creator manageme
 The UI design agreed with the client uses:
 - Warm off-white background (#faf8f5) — NOT pure white
 - Warm sidebar (#f7f5f1) with light border (#e0ddd8)
-- Lime green accent (#c9f264) for primary buttons and active indicators
+- Dark (#0f0f0d) primary action buttons with white text — NO lime green
 - Black (#0f0f0d) for active nav items, ink text
 - Geist for body text, Instrument Serif for headings
 - Month calendar as the homepage (full grid, Mon–Sun, week numbers on left)

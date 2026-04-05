@@ -351,7 +351,7 @@ export function DayEditor({ date, posts, workspaceId, onBack, onPostCreated }: D
             onChange={(e) => setGeneratedCaption(e.target.value)}
             style={{
               width: '100%', minHeight: 120, padding: '12px 14px',
-              borderRadius: 8, border: '1px solid var(--studio-accent)',
+              borderRadius: 8, border: '1px solid var(--studio-ink-3)',
               background: 'var(--studio-panel)', color: 'var(--studio-ink)',
               fontSize: 13, fontFamily: 'var(--studio-sans)',
               lineHeight: 1.6, resize: 'vertical', outline: 'none',
@@ -568,7 +568,7 @@ export function DayEditor({ date, posts, workspaceId, onBack, onPostCreated }: D
         style={{
           width: '100%', padding: '12px 0', borderRadius: 8,
           border: 'none', background: 'var(--studio-accent)',
-          color: 'var(--studio-ink)', fontSize: 13, fontWeight: 600,
+          color: '#FFFFFF', fontSize: 13, fontWeight: 600,
           cursor: 'pointer', fontFamily: 'var(--studio-sans)',
           display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
         }}

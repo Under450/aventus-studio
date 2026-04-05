@@ -241,7 +241,7 @@ export function MonthCalendar({ posts, onSelectDay, onSelectWeek, selectedDate }
                     opacity: isCurrentMonth ? 1 : 0.35,
                     minHeight: 0,
                     overflow: 'hidden',
-                    boxShadow: isSelected ? '0 0 0 1px var(--studio-accent)' : 'none',
+                    boxShadow: isSelected ? '0 0 0 1px var(--studio-ink)' : 'none',
                   }}
                   whileHover={{ background: 'var(--studio-sidebar)' }}
                 >
@@ -257,7 +257,7 @@ export function MonthCalendar({ posts, onSelectDay, onSelectWeek, selectedDate }
                     {isToday && (
                       <span style={{
                         width: 5, height: 5, borderRadius: '50%',
-                        background: 'var(--studio-accent)', flexShrink: 0,
+                        background: 'var(--studio-ink)', flexShrink: 0,
                       }} />
                     )}
                     {status === 'draft' && (

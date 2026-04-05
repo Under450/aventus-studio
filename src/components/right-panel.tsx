@@ -151,7 +151,7 @@ export function RightPanel() {
           borderRadius: 8,
           border: 'none',
           background: 'var(--studio-accent)',
-          color: 'var(--studio-ink)',
+          color: '#FFFFFF',
           fontSize: 13,
           fontWeight: 600,
           cursor: 'pointer',

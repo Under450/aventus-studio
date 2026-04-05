@@ -124,7 +124,7 @@ export function Sidebar() {
                     width: 6,
                     height: 6,
                     borderRadius: '50%',
-                    background: isWsActive ? 'var(--studio-accent)' : 'var(--studio-border-light)',
+                    background: isWsActive ? '#22C55E' : 'var(--studio-border-light)',
                     flexShrink: 0,
                   }}
                 />
@@ -191,7 +191,7 @@ export function Sidebar() {
               borderRadius: 8,
               border: 'none',
               background: 'var(--studio-accent)',
-              color: 'var(--studio-ink)',
+              color: '#FFFFFF',
               fontSize: 13,
               fontWeight: 600,
               cursor: 'pointer',

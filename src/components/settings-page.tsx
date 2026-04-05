@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useWorkspace } from '@/hooks/use-workspace'
+import { Pencil, Trash2, X, Check } from 'lucide-react'
 
 export function SettingsPage() {
   const { workspaces, reload } = useWorkspace()
@@ -10,6 +11,13 @@ export function SettingsPage() {
   const [creatorVoice, setCreatorVoice] = useState('')
   const [creating, setCreating] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+
+  // Inline edit state
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editName, setEditName] = useState('')
+  const [editNiche, setEditNiche] = useState('')
+  const [editVoice, setEditVoice] = useState('')
+  const [saving, setSaving] = useState(false)
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault()
@@ -49,45 +57,78 @@ export function SettingsPage() {
     }
   }
 
+  function startEdit(ws: { id: string; name: string; niche: string; creator_voice: string }) {
+    setEditingId(ws.id)
+    setEditName(ws.name)
+    setEditNiche(ws.niche || '')
+    setEditVoice(ws.creator_voice || '')
+  }
+
+  function cancelEdit() {
+    setEditingId(null)
+  }
+
+  async function handleSaveEdit(id: string) {
+    if (!editName.trim() || saving) return
+    setSaving(true)
+    try {
+      const res = await fetch(`/api/workspaces/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: editName.trim(),
+          niche: editNiche.trim(),
+          creator_voice: editVoice.trim(),
+        }),
+      })
+      if (res.ok) {
+        setEditingId(null)
+        await reload()
+      }
+    } finally {
+      setSaving(false)
+    }
+  }
+
   const inputStyle: React.CSSProperties = {
     width: '100%',
     padding: '8px 12px',
-    fontSize: 14,
-    fontFamily: 'Inter, sans-serif',
-    border: '0.5px solid #E5E7EB',
+    fontSize: 13,
+    fontFamily: 'var(--studio-sans)',
+    border: '1px solid var(--studio-border-light)',
     borderRadius: 6,
     outline: 'none',
-    color: '#111827',
-    background: '#FFFFFF',
+    color: 'var(--studio-ink)',
+    background: 'var(--studio-panel)',
   }
 
   const labelStyle: React.CSSProperties = {
     display: 'block',
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: 500,
-    color: '#6B7280',
+    color: 'var(--studio-ink-3)',
     marginBottom: 4,
-    fontFamily: 'Inter, sans-serif',
+    fontFamily: 'var(--studio-sans)',
     letterSpacing: '0.06em',
     textTransform: 'uppercase' as const,
   }
 
   const cardStyle: React.CSSProperties = {
-    background: '#FFFFFF',
-    border: '0.5px solid #E5E7EB',
-    borderRadius: 12,
+    background: 'var(--studio-panel)',
+    border: '1px solid var(--studio-border-light)',
+    borderRadius: 10,
     padding: 20,
   }
 
   return (
-    <div style={{ maxWidth: 560, margin: '0 auto', padding: '32px 24px', fontFamily: 'Inter, sans-serif' }}>
-      <h1 style={{ fontSize: 18, fontWeight: 600, color: '#111827', marginBottom: 24 }}>
-        Settings
+    <div style={{ maxWidth: 560, margin: '0 auto', padding: '32px 24px' }}>
+      <h1 style={{ fontSize: 22, fontWeight: 400, color: 'var(--studio-ink)', letterSpacing: '-0.02em', marginBottom: 24 }}>
+        Create New Company/Creator
       </h1>
 
-      {/* New Workspace Form */}
+      {/* New Company/Creator Form */}
       <div style={{ ...cardStyle, marginBottom: 24 }}>
-        <h2 style={{ fontSize: 15, fontWeight: 500, color: '#111827', marginBottom: 16 }}>
+        <h2 style={{ fontSize: 15, fontWeight: 500, color: 'var(--studio-ink)', marginBottom: 16, fontFamily: 'var(--studio-sans)' }}>
           New Company/Creator
         </h2>
         <form onSubmit={handleCreate}>
@@ -127,11 +168,11 @@ export function SettingsPage() {
             disabled={creating || !name.trim()}
             style={{
               padding: '8px 20px',
-              fontSize: 14,
-              fontWeight: 500,
-              fontFamily: 'Inter, sans-serif',
-              background: creating ? '#9CA3AF' : '#111827',
-              color: '#FFFFFF',
+              fontSize: 13,
+              fontWeight: 600,
+              fontFamily: 'var(--studio-sans)',
+              background: creating ? 'var(--studio-border-light)' : 'var(--studio-ink)',
+              color: creating ? 'var(--studio-ink-4)' : '#FFFFFF',
               border: 'none',
               borderRadius: 6,
               cursor: creating ? 'not-allowed' : 'pointer',
@@ -142,67 +183,138 @@ export function SettingsPage() {
         </form>
       </div>
 
-      {/* Workspaces List */}
+      {/* Companies / Creators List */}
       <div>
-        <h2 style={{ fontSize: 15, fontWeight: 500, color: '#111827', marginBottom: 12 }}>
+        <h2 style={{ fontSize: 15, fontWeight: 500, color: 'var(--studio-ink)', marginBottom: 12, fontFamily: 'var(--studio-sans)' }}>
           Companies / Creators
         </h2>
         {workspaces.length === 0 && (
-          <p style={{ fontSize: 13, color: '#9CA3AF' }}>No companies or creators yet.</p>
+          <p style={{ fontSize: 13, color: 'var(--studio-ink-3)' }}>No companies or creators yet.</p>
         )}
-        {workspaces.map((ws) => (
-          <div
-            key={ws.id}
-            style={{
-              ...cardStyle,
-              marginBottom: 8,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-            }}
-          >
-            <div>
-              <div style={{ fontSize: 14, fontWeight: 500, color: '#111827' }}>
-                {ws.name}
-              </div>
-              {ws.niche && (
-                <div style={{ fontSize: 12, color: '#6B7280', marginTop: 2 }}>
-                  {ws.niche}
+        {workspaces.map((ws) => {
+          const isEditing = editingId === ws.id
+
+          if (isEditing) {
+            return (
+              <div key={ws.id} style={{ ...cardStyle, marginBottom: 8 }}>
+                <div style={{ marginBottom: 10 }}>
+                  <label style={labelStyle}>Name *</label>
+                  <input
+                    type="text"
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    style={inputStyle}
+                  />
                 </div>
-              )}
-            </div>
-            <button
-              onClick={() => handleDelete(ws.id, ws.name)}
-              disabled={deletingId === ws.id}
-              title="Delete company/creator"
+                <div style={{ marginBottom: 10 }}>
+                  <label style={labelStyle}>Niche</label>
+                  <input
+                    type="text"
+                    value={editNiche}
+                    onChange={(e) => setEditNiche(e.target.value)}
+                    style={inputStyle}
+                  />
+                </div>
+                <div style={{ marginBottom: 12 }}>
+                  <label style={labelStyle}>Creator Voice</label>
+                  <input
+                    type="text"
+                    value={editVoice}
+                    onChange={(e) => setEditVoice(e.target.value)}
+                    style={inputStyle}
+                  />
+                </div>
+                <div style={{ display: 'flex', gap: 6 }}>
+                  <button
+                    onClick={() => handleSaveEdit(ws.id)}
+                    disabled={saving || !editName.trim()}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 4,
+                      padding: '6px 14px', fontSize: 12, fontWeight: 600,
+                      fontFamily: 'var(--studio-sans)',
+                      background: saving ? 'var(--studio-border-light)' : 'var(--studio-ink)',
+                      color: '#FFFFFF', border: 'none', borderRadius: 6,
+                      cursor: saving ? 'not-allowed' : 'pointer',
+                    }}
+                  >
+                    <Check size={12} />
+                    {saving ? 'Saving...' : 'Save'}
+                  </button>
+                  <button
+                    onClick={cancelEdit}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 4,
+                      padding: '6px 14px', fontSize: 12, fontWeight: 500,
+                      fontFamily: 'var(--studio-sans)',
+                      background: 'none', color: 'var(--studio-ink-3)',
+                      border: '1px solid var(--studio-border-light)', borderRadius: 6,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <X size={12} />
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )
+          }
+
+          return (
+            <div
+              key={ws.id}
               style={{
-                background: 'none',
-                border: 'none',
-                cursor: deletingId === ws.id ? 'not-allowed' : 'pointer',
-                padding: 6,
-                color: deletingId === ws.id ? '#D1D5DB' : '#991B1B',
+                ...cardStyle,
+                marginBottom: 8,
                 display: 'flex',
                 alignItems: 'center',
+                justifyContent: 'space-between',
               }}
             >
-              <svg
-                width={16}
-                height={16}
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth={2}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <polyline points="3 6 5 6 21 6" />
-                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                <line x1="10" y1="11" x2="10" y2="17" />
-                <line x1="14" y1="11" x2="14" y2="17" />
-              </svg>
-            </button>
-          </div>
-        ))}
+              <div>
+                <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--studio-ink)' }}>
+                  {ws.name}
+                </div>
+                {ws.niche && (
+                  <div style={{ fontSize: 12, color: 'var(--studio-ink-3)', marginTop: 2 }}>
+                    {ws.niche}
+                  </div>
+                )}
+                {ws.creator_voice && (
+                  <div style={{ fontSize: 11, color: 'var(--studio-ink-4)', marginTop: 2 }}>
+                    Voice: {ws.creator_voice}
+                  </div>
+                )}
+              </div>
+              <div style={{ display: 'flex', gap: 4 }}>
+                <button
+                  onClick={() => startEdit(ws)}
+                  title="Edit"
+                  style={{
+                    background: 'none', border: 'none', cursor: 'pointer',
+                    padding: 6, color: 'var(--studio-ink-3)',
+                    display: 'flex', alignItems: 'center',
+                  }}
+                >
+                  <Pencil size={14} />
+                </button>
+                <button
+                  onClick={() => handleDelete(ws.id, ws.name)}
+                  disabled={deletingId === ws.id}
+                  title="Delete"
+                  style={{
+                    background: 'none', border: 'none',
+                    cursor: deletingId === ws.id ? 'not-allowed' : 'pointer',
+                    padding: 6,
+                    color: deletingId === ws.id ? 'var(--studio-border-light)' : '#991B1B',
+                    display: 'flex', alignItems: 'center',
+                  }}
+                >
+                  <Trash2 size={14} />
+                </button>
+              </div>
+            </div>
+          )
+        })}
       </div>
     </div>
   )
