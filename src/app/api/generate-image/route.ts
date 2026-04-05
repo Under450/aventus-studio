@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { validateOrigin } from '@/lib/csrf'
-import { generateImage } from '@/lib/gemini'
 
 export async function POST(request: Request) {
   if (!validateOrigin(request)) {
@@ -13,9 +12,8 @@ export async function POST(request: Request) {
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const body = await request.json()
-  const { prompt, platform, quality } = body as {
+  const { prompt, quality } = body as {
     prompt?: string
-    platform?: string
     quality?: 'free' | 'premium'
   }
 
@@ -24,12 +22,26 @@ export async function POST(request: Request) {
   }
 
   try {
-    const result = await generateImage(
+    if (quality === 'premium') {
+      // FLUX Dev via fal.ai — left for separate task
+      return NextResponse.json({ error: 'Premium generation not yet configured' }, { status: 501 })
+    }
+
+    // Free — Gemini Imagen 3 via @google/genai
+    const { GoogleGenAI } = await import('@google/genai')
+    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! })
+    const result = await ai.models.generateImages({
+      model: 'imagen-3.0-generate-002',
       prompt,
-      platform || 'instagram',
-      quality || 'free'
-    )
-    return NextResponse.json({ url: result.url, provider: result.provider })
+      config: { numberOfImages: 1, aspectRatio: '4:3' },
+    })
+
+    const base64 = result.generatedImages?.[0]?.image?.imageBytes
+    if (!base64) {
+      return NextResponse.json({ error: 'Imagen returned no image' }, { status: 500 })
+    }
+
+    return NextResponse.json({ base64, provider: 'imagen' })
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Image generation failed'
     return NextResponse.json({ error: message }, { status: 500 })

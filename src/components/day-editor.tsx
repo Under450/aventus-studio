@@ -131,7 +131,11 @@ export function DayEditor({ date, posts, workspaceId, onBack, onPostCreated }: D
         setImageError(data.error || 'Image generation failed')
         return
       }
-      setImageUrl(data.url)
+      if (data.base64) {
+        setImageUrl(`data:image/png;base64,${data.base64}`)
+      } else if (data.url) {
+        setImageUrl(data.url)
+      }
       setImageProvider(data.provider || quality)
     } catch (err) {
       setImageError(err instanceof Error ? err.message : 'Network error')
