@@ -1,7 +1,42 @@
 import { useState } from 'react';
 import { X, Plus, Trash2, ChevronDown, ChevronUp, Check } from 'lucide-react';
-import type { Account } from '../types';
-import { createAccount, upsertAccount, deleteAccount, saveAccounts, saveActiveAccountId } from '../lib/accounts';
+
+// ── Account type & localStorage helpers ──────────────────────
+
+export interface Account {
+  id: string;
+  name: string;
+  claudeApiKey: string;
+}
+
+const STORAGE_KEY = 'aventus-accounts';
+const ACTIVE_KEY = 'aventus-active-account';
+
+function createAccount(name: string, _niche: string, _voice: string, claudeApiKey: string): Account {
+  return { id: crypto.randomUUID(), name, claudeApiKey };
+}
+
+function upsertAccount(accounts: Account[], account: Account): Account[] {
+  const idx = accounts.findIndex(a => a.id === account.id);
+  if (idx >= 0) {
+    const updated = [...accounts];
+    updated[idx] = account;
+    return updated;
+  }
+  return [...accounts, account];
+}
+
+function deleteAccount(accounts: Account[], id: string): Account[] {
+  return accounts.filter(a => a.id !== id);
+}
+
+function saveAccounts(accounts: Account[]) {
+  if (typeof window !== 'undefined') localStorage.setItem(STORAGE_KEY, JSON.stringify(accounts));
+}
+
+function saveActiveAccountId(id: string) {
+  if (typeof window !== 'undefined') localStorage.setItem(ACTIVE_KEY, id);
+}
 
 interface AccountManagerProps {
   accounts: Account[];

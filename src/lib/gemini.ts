@@ -1,5 +1,5 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import * as fal from "@fal-ai/client";
+import { fal } from "@fal-ai/client";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
@@ -134,7 +134,7 @@ export async function generateImage(
     const result = await fal.subscribe("fal-ai/flux/dev", {
       input: {
         prompt,
-        image_size: ratios.fal,
+        image_size: ratios.fal as "square" | "portrait_16_9" | "landscape_16_9",
         num_images: 1,
       },
     });
@@ -163,7 +163,7 @@ export async function generateImage(
   const response = result.response;
   const parts = response.candidates?.[0]?.content?.parts;
   const imagePart = parts?.find(
-    (p: Record<string, unknown>) => p.inlineData
+    (p) => 'inlineData' in p
   ) as { inlineData: { data: string; mimeType: string } } | undefined;
 
   if (!imagePart?.inlineData?.data) {
