@@ -2,8 +2,7 @@
 
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { ArrowLeft, Clock, Hash, Check, Sparkles, Loader2, RefreshCw, ImageIcon, Upload, Zap } from 'lucide-react'
-import { createClient } from '@/lib/supabase/client'
+import { ArrowLeft, Clock, Hash, Check, Sparkles, Loader2, RefreshCw, ImageIcon, Upload } from 'lucide-react'
 import type { Post } from '@/types/database'
 
 const PLATFORMS = [
@@ -144,35 +143,12 @@ export function DayEditor({ date, posts, workspaceId, onBack, onPostCreated }: D
     }
   }
 
-  const handleUploadImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleUploadImage = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
-
-    setImageLoading(true)
+    setImageUrl(URL.createObjectURL(file))
+    setImageProvider('upload')
     setImageError('')
-
-    try {
-      const supabase = createClient()
-      const ext = file.name.split('.').pop() || 'png'
-      const path = `uploads/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
-
-      const { error: uploadError } = await supabase.storage
-        .from('post-media')
-        .upload(path, file, { contentType: file.type, upsert: true })
-
-      if (uploadError) {
-        setImageError(uploadError.message)
-        return
-      }
-
-      const { data: { publicUrl } } = supabase.storage.from('post-media').getPublicUrl(path)
-      setImageUrl(publicUrl)
-      setImageProvider('upload')
-    } catch (err) {
-      setImageError(err instanceof Error ? err.message : 'Upload failed')
-    } finally {
-      setImageLoading(false)
-    }
   }
 
   const canGenerate = brief.trim().length > 0 && workspaceId && activePlatforms.length > 0 && !generating
@@ -396,82 +372,79 @@ export function DayEditor({ date, posts, workspaceId, onBack, onPostCreated }: D
         <div style={{ marginBottom: 16 }}>
           <div style={{
             fontSize: 11, fontWeight: 500, color: 'var(--studio-ink-3)',
-            textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8,
+            textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10,
             display: 'flex', alignItems: 'center', gap: 4,
           }}>
             <ImageIcon size={10} />
             Image
           </div>
 
-          {/* Buttons row */}
-          <div style={{ display: 'flex', gap: 6, marginBottom: 12 }}>
+          {/* Three generation buttons */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
+            {/* Button 1 — Imagen 3 (active) */}
             <button
               onClick={() => handleGenerateImage('free')}
               disabled={imageLoading}
               style={{
-                flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5,
-                padding: '8px 0', borderRadius: 6,
-                border: '1px solid var(--studio-border-light)',
-                background: 'var(--studio-panel)', color: 'var(--studio-ink-2)',
-                fontSize: 12, fontWeight: 500, cursor: imageLoading ? 'not-allowed' : 'pointer',
-                fontFamily: 'var(--studio-sans)', opacity: imageLoading ? 0.5 : 1,
-              }}
-            >
-              <Sparkles size={12} />
-              Generate (free)
-            </button>
-            <button
-              onClick={() => handleGenerateImage('premium')}
-              disabled={imageLoading}
-              style={{
-                flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5,
-                padding: '8px 0', borderRadius: 6,
-                border: '1px solid var(--studio-border-light)',
-                background: 'var(--studio-ink)', color: '#FFFFFF',
-                fontSize: 12, fontWeight: 500, cursor: imageLoading ? 'not-allowed' : 'pointer',
-                fontFamily: 'var(--studio-sans)', opacity: imageLoading ? 0.5 : 1,
-              }}
-            >
-              <Zap size={12} />
-              Generate (premium)
-            </button>
-            <label
-              style={{
-                flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5,
-                padding: '8px 0', borderRadius: 6,
-                border: '1px solid var(--studio-border-light)',
-                background: 'var(--studio-panel)', color: 'var(--studio-ink-2)',
-                fontSize: 12, fontWeight: 500,
+                width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                padding: '10px 0', borderRadius: 8, border: 'none',
+                background: '#0f0f0d', color: '#faf8f5',
+                fontSize: 13, fontWeight: 600, fontFamily: 'var(--studio-sans)',
                 cursor: imageLoading ? 'not-allowed' : 'pointer',
-                fontFamily: 'var(--studio-sans)', opacity: imageLoading ? 0.5 : 1,
+                opacity: imageLoading ? 0.6 : 1,
               }}
             >
-              <Upload size={12} />
-              Upload
-              <input
-                type="file"
-                accept="image/png,image/jpeg"
-                onChange={handleUploadImage}
-                disabled={imageLoading}
-                style={{ display: 'none' }}
-              />
-            </label>
-          </div>
+              {imageLoading ? (
+                <>
+                  <Loader2 size={14} className="animate-spin" />
+                  Generating…
+                </>
+              ) : (
+                <>
+                  <Sparkles size={14} />
+                  Generate with Imagen 3 (free)
+                </>
+              )}
+            </button>
 
-          {/* Loading state */}
-          {imageLoading && (
-            <div style={{
-              padding: '24px', borderRadius: 8,
-              border: '1px solid var(--studio-border-light)',
-              background: 'var(--studio-panel)',
-              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
-            }}>
-              <Loader2 size={20} color="var(--studio-ink-3)" className="animate-spin" />
-              <p style={{ fontSize: 12, color: 'var(--studio-ink-3)' }}>
-                Generating image{imageProvider === 'premium' || !imageProvider ? ' (~30s for premium)' : ''}…
-              </p>
+            {/* Button 2 — FLUX Dev (disabled) */}
+            <div style={{ textAlign: 'center' }}>
+              <button
+                disabled
+                style={{
+                  width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                  padding: '10px 0', borderRadius: 8, border: 'none',
+                  background: '#e0ddd8', color: '#8a847c',
+                  fontSize: 13, fontWeight: 600, fontFamily: 'var(--studio-sans)',
+                  cursor: 'not-allowed', opacity: 0.6,
+                }}
+              >
+                Generate with FLUX Dev (premium)
+              </button>
+              <span style={{ fontSize: 10, color: '#8a847c', marginTop: 4, display: 'block' }}>
+                Coming soon
+              </span>
             </div>
-          )}
+
+            {/* Button 3 — Stable Diffusion (disabled) */}
+            <div style={{ textAlign: 'center' }}>
+              <button
+                disabled
+                style={{
+                  width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                  padding: '10px 0', borderRadius: 8, border: 'none',
+                  background: '#e0ddd8', color: '#8a847c',
+                  fontSize: 13, fontWeight: 600, fontFamily: 'var(--studio-sans)',
+                  cursor: 'not-allowed', opacity: 0.6,
+                }}
+              >
+                Generate with Stable Diffusion
+              </button>
+              <span style={{ fontSize: 10, color: '#8a847c', marginTop: 4, display: 'block' }}>
+                Coming soon
+              </span>
+            </div>
+          </div>
 
           {/* Error */}
           {imageError && (
@@ -480,31 +453,60 @@ export function DayEditor({ date, posts, workspaceId, onBack, onPostCreated }: D
             </p>
           )}
 
-          {/* Image preview */}
-          {imageUrl && !imageLoading && (
-            <div style={{
-              borderRadius: 8, overflow: 'hidden',
-              border: '1px solid var(--studio-border-light)',
-              background: 'var(--studio-panel)',
-            }}>
-              <img
-                src={imageUrl}
-                alt="Generated post image"
-                style={{ width: '100%', display: 'block' }}
-              />
-              <div style={{
-                padding: '8px 12px',
-                borderTop: '1px solid var(--studio-border-light)',
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              }}>
-                <span style={{ fontSize: 11, color: 'var(--studio-ink-4)' }}>
-                  {imageProvider === 'imagen' ? 'Gemini Imagen (free)' :
-                   imageProvider === 'flux-dev' ? 'FLUX Dev (premium)' :
-                   imageProvider === 'upload' ? 'Uploaded' : imageProvider}
-                </span>
+          {/* Image preview box */}
+          <div style={{
+            minHeight: 200, borderRadius: 10, overflow: 'hidden',
+            border: imageUrl && !imageLoading ? '1px solid var(--studio-border-light)' : '2px dashed #e0ddd8',
+            background: 'var(--studio-panel)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            marginBottom: 12,
+          }}>
+            {imageLoading ? (
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, padding: 24 }}>
+                <Loader2 size={20} color="var(--studio-ink-3)" className="animate-spin" />
+                <p style={{ fontSize: 12, color: 'var(--studio-ink-3)' }}>Generating image…</p>
               </div>
-            </div>
-          )}
+            ) : imageUrl ? (
+              <div style={{ width: '100%' }}>
+                <img
+                  src={imageUrl}
+                  alt="Post image"
+                  style={{ width: '100%', display: 'block', objectFit: 'cover' }}
+                />
+                <div style={{
+                  padding: '8px 12px',
+                  borderTop: '1px solid var(--studio-border-light)',
+                  display: 'flex', alignItems: 'center',
+                }}>
+                  <span style={{ fontSize: 11, color: 'var(--studio-ink-4)' }}>
+                    {imageProvider === 'imagen' ? 'Gemini Imagen 3 (free)' :
+                     imageProvider === 'upload' ? 'Uploaded' : imageProvider}
+                  </span>
+                </div>
+              </div>
+            ) : (
+              <p style={{ fontSize: 12, color: '#8a847c' }}>Image will appear here</p>
+            )}
+          </div>
+
+          {/* Upload own image */}
+          <label style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+            padding: '8px 0', borderRadius: 8,
+            border: '1px solid var(--studio-border-light)',
+            background: 'var(--studio-panel)', color: 'var(--studio-ink-3)',
+            fontSize: 12, fontWeight: 500, cursor: 'pointer',
+            fontFamily: 'var(--studio-sans)',
+          }}>
+            <Upload size={12} />
+            Or upload your own image
+            <input
+              type="file"
+              accept="image/png,image/jpeg"
+              onChange={handleUploadImage}
+              style={{ display: 'none' }}
+            />
+          </label>
         </div>
       )}
 
