@@ -82,6 +82,34 @@ export function Sidebar() {
         </div>
       </motion.div>
 
+      {/* Weekly generation button */}
+      <div style={{ padding: '0 12px 12px' }}>
+        <Link href="/generate" style={{ textDecoration: 'none' }}>
+          <motion.button
+            style={{
+              width: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 6,
+              padding: '10px 0',
+              borderRadius: 8,
+              border: 'none',
+              background: 'var(--studio-accent)',
+              color: '#FFFFFF',
+              fontSize: 13,
+              fontWeight: 600,
+              cursor: 'pointer',
+            }}
+            whileHover={{ opacity: 0.9 }}
+            whileTap={{ scale: 0.98 }}
+          >
+            <Plus size={15} strokeWidth={2} />
+            Weekly Generation
+          </motion.button>
+        </Link>
+      </div>
+
       {/* Company/Creator switcher */}
       {workspaces.length > 0 && (
         <motion.div
@@ -177,33 +205,6 @@ export function Sidebar() {
         })}
       </nav>
 
-      {/* Weekly generation button */}
-      <div style={{ padding: '0 12px 16px' }}>
-        <Link href="/generate" style={{ textDecoration: 'none' }}>
-          <motion.button
-            style={{
-              width: '100%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 6,
-              padding: '10px 0',
-              borderRadius: 8,
-              border: 'none',
-              background: 'var(--studio-accent)',
-              color: '#FFFFFF',
-              fontSize: 13,
-              fontWeight: 600,
-              cursor: 'pointer',
-            }}
-            whileHover={{ opacity: 0.9 }}
-            whileTap={{ scale: 0.98 }}
-          >
-            <Plus size={15} strokeWidth={2} />
-            Weekly Generation
-          </motion.button>
-        </Link>
-      </div>
     </aside>
   )
 }
