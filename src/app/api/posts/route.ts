@@ -52,7 +52,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'workspace_id is required' }, { status: 400 })
   }
 
-  if (!platform || !['instagram', 'tiktok', 'youtube'].includes(platform)) {
+  if (!platform || !['instagram', 'tiktok', 'youtube', 'x', 'linkedin', 'reddit'].includes(platform)) {
     return NextResponse.json({ error: 'Valid platform is required' }, { status: 400 })
   }
 
@@ -63,10 +63,10 @@ export async function POST(request: Request) {
       platform,
       caption: caption || '',
       hashtags: hashtags || [],
-      media_type: 'image',
-      status: 'draft',
+      media_type: body.media_type || 'image',
+      status: body.status || 'draft',
       scheduled_at: scheduled_at || null,
-      ai_generated: false,
+      ai_generated: body.ai_generated ?? false,
     })
     .select()
     .single()

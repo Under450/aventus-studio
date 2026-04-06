@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
-import { ChevronLeft, ChevronRight, Check } from 'lucide-react'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 import type { Post } from '@/types/database'
 
 interface MonthCalendarProps {
@@ -15,8 +15,6 @@ interface MonthCalendarProps {
 function getMonthData(year: number, month: number) {
   const firstDay = new Date(year, month, 1)
   const lastDay = new Date(year, month + 1, 0)
-
-  // Find the Monday on or before the first day
   const startDate = new Date(firstDay)
   const dayOfWeek = startDate.getDay()
   const diff = dayOfWeek === 0 ? -6 : 1 - dayOfWeek
@@ -24,7 +22,6 @@ function getMonthData(year: number, month: number) {
 
   const weeks: { weekNumber: number; days: Date[] }[] = []
   const current = new Date(startDate)
-
   while (current <= lastDay || weeks.length < 5) {
     const week: Date[] = []
     const weekNum = getISOWeekNumber(current)
@@ -35,7 +32,6 @@ function getMonthData(year: number, month: number) {
     weeks.push({ weekNumber: weekNum, days: week })
     if (weeks.length >= 6) break
   }
-
   return { weeks, month, year }
 }
 
@@ -51,6 +47,11 @@ function toDateString(date: Date): string {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
 }
 
+function formatTime(isoStr: string): string {
+  const d = new Date(isoStr)
+  return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })
+}
+
 const MONTH_NAMES = [
   'January', 'February', 'March', 'April', 'May', 'June',
   'July', 'August', 'September', 'October', 'November', 'December',
@@ -64,14 +65,15 @@ const PLATFORM_COLOURS: Record<string, { bg: string; text: string }> = {
   youtube: { bg: '#FEF2F2', text: '#991B1B' },
   linkedin: { bg: '#EFF6FF', text: '#1E40AF' },
   x: { bg: '#EFF6FF', text: '#1D4ED8' },
+  reddit: { bg: '#FFF7ED', text: '#C2410C' },
 }
 
-type DayStatus = 'empty' | 'draft' | 'sent'
-
-function getDayStatus(dayPosts: Post[]): DayStatus {
-  if (dayPosts.length === 0) return 'empty'
-  if (dayPosts.every((p) => p.status === 'published')) return 'sent'
-  return 'draft'
+const STATUS_COLOURS: Record<string, string> = {
+  approved: '#1D4ED8',
+  scheduled: '#1D4ED8',
+  published: '#15803D',
+  draft: '#B45309',
+  failed: '#991B1B',
 }
 
 export function MonthCalendar({ posts, onSelectDay, onSelectWeek, selectedDate }: MonthCalendarProps) {
@@ -90,6 +92,10 @@ export function MonthCalendar({ posts, onSelectDay, onSelectWeek, selectedDate }
         map[date].push(post)
       }
     }
+    // Sort each day's posts by time
+    for (const date in map) {
+      map[date].sort((a, b) => (a.scheduled_at || '').localeCompare(b.scheduled_at || ''))
+    }
     return map
   }, [posts])
 
@@ -97,7 +103,6 @@ export function MonthCalendar({ posts, onSelectDay, onSelectWeek, selectedDate }
     if (viewMonth === 0) { setViewMonth(11); setViewYear(viewYear - 1) }
     else setViewMonth(viewMonth - 1)
   }
-
   const nextMonth = () => {
     if (viewMonth === 11) { setViewMonth(0); setViewYear(viewYear + 1) }
     else setViewMonth(viewMonth + 1)
@@ -108,72 +113,31 @@ export function MonthCalendar({ posts, onSelectDay, onSelectWeek, selectedDate }
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       {/* Month header */}
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        padding: '20px 24px 16px',
-      }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 24px 16px' }}>
         <h1 style={{ fontSize: 24, fontWeight: 400, color: 'var(--studio-ink)', letterSpacing: '-0.02em' }}>
           {MONTH_NAMES[viewMonth]} {viewYear}
         </h1>
         <div style={{ display: 'flex', gap: 4 }}>
-          <button
-            onClick={prevMonth}
-            style={{
-              width: 32, height: 32, borderRadius: 6,
-              border: '1px solid var(--studio-border-light)', background: 'var(--studio-panel)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              cursor: 'pointer', color: 'var(--studio-ink-3)',
-            }}
-          >
+          <button onClick={prevMonth}
+            style={{ width: 32, height: 32, borderRadius: 6, border: '1px solid var(--studio-border-light)', background: 'var(--studio-panel)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--studio-ink-3)' }}>
             <ChevronLeft size={16} />
           </button>
-          <button
-            onClick={() => { setViewMonth(today.getMonth()); setViewYear(today.getFullYear()) }}
-            style={{
-              padding: '0 12px', height: 32, borderRadius: 6,
-              border: '1px solid var(--studio-border-light)', background: 'var(--studio-panel)',
-              fontSize: 12, fontWeight: 500, color: 'var(--studio-ink-3)',
-              cursor: 'pointer', fontFamily: 'var(--studio-sans)',
-            }}
-          >
+          <button onClick={() => { setViewMonth(today.getMonth()); setViewYear(today.getFullYear()) }}
+            style={{ padding: '0 12px', height: 32, borderRadius: 6, border: '1px solid var(--studio-border-light)', background: 'var(--studio-panel)', fontSize: 12, fontWeight: 500, color: 'var(--studio-ink-3)', cursor: 'pointer', fontFamily: 'var(--studio-sans)' }}>
             Today
           </button>
-          <button
-            onClick={nextMonth}
-            style={{
-              width: 32, height: 32, borderRadius: 6,
-              border: '1px solid var(--studio-border-light)', background: 'var(--studio-panel)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              cursor: 'pointer', color: 'var(--studio-ink-3)',
-            }}
-          >
+          <button onClick={nextMonth}
+            style={{ width: 32, height: 32, borderRadius: 6, border: '1px solid var(--studio-border-light)', background: 'var(--studio-panel)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'var(--studio-ink-3)' }}>
             <ChevronRight size={16} />
           </button>
         </div>
       </div>
 
       {/* Day headers */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: '48px repeat(7, 1fr)',
-        padding: '0 24px',
-        gap: 0,
-      }}>
-        <div /> {/* Week number column header */}
+      <div style={{ display: 'grid', gridTemplateColumns: '48px repeat(7, 1fr)', padding: '0 24px', gap: 0 }}>
+        <div />
         {DAY_HEADERS.map((d) => (
-          <div
-            key={d}
-            style={{
-              fontSize: 11,
-              fontWeight: 500,
-              color: 'var(--studio-ink-4)',
-              textTransform: 'uppercase',
-              letterSpacing: '0.06em',
-              padding: '0 0 8px 8px',
-            }}
-          >
+          <div key={d} style={{ fontSize: 11, fontWeight: 500, color: 'var(--studio-ink-4)', textTransform: 'uppercase', letterSpacing: '0.06em', padding: '0 0 8px 8px' }}>
             {d}
           </div>
         ))}
@@ -182,123 +146,84 @@ export function MonthCalendar({ posts, onSelectDay, onSelectWeek, selectedDate }
       {/* Calendar grid */}
       <div style={{ flex: 1, padding: '0 24px 24px', display: 'flex', flexDirection: 'column', gap: 2 }}>
         {weeks.map((week, wi) => (
-          <div
-            key={wi}
-            style={{
-              display: 'grid',
-              gridTemplateColumns: '48px repeat(7, 1fr)',
-              flex: 1,
-              gap: 2,
-            }}
-          >
-            {/* Week number */}
+          <div key={wi} style={{ display: 'grid', gridTemplateColumns: '48px repeat(7, 1fr)', flex: 1, gap: 2 }}>
             <motion.button
               onClick={() => onSelectWeek(week.weekNumber, viewYear, toDateString(week.days[0]))}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: 11,
-                fontWeight: 600,
-                color: 'var(--studio-ink-3)',
-                background: 'transparent',
-                border: 'none',
-                borderRadius: 6,
-                cursor: 'pointer',
-              }}
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 600, color: 'var(--studio-ink-3)', background: 'transparent', border: 'none', borderRadius: 6, cursor: 'pointer' }}
               whileHover={{ background: 'var(--studio-border-light)' }}
             >
               W{week.weekNumber}
             </motion.button>
 
-            {/* Day cells */}
             {week.days.map((day) => {
               const dateStr = toDateString(day)
               const isCurrentMonth = day.getMonth() === viewMonth
               const isToday = dateStr === todayStr
               const isSelected = dateStr === selectedDate
               const dayPosts = postsByDate[dateStr] || []
-              const status = getDayStatus(dayPosts)
-              const platforms = [...new Set(dayPosts.map((p) => p.platform))]
 
               return (
                 <motion.button
                   key={dateStr}
                   onClick={() => onSelectDay(dateStr)}
                   style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'flex-start',
-                    padding: 8,
-                    borderRadius: 8,
-                    border: isSelected
-                      ? '1.5px solid var(--studio-ink)'
-                      : isToday
-                        ? '1.5px solid var(--studio-border-light)'
-                        : '0.5px solid var(--studio-border-light)',
-                    background: isSelected ? 'var(--studio-panel)' : 'var(--studio-panel)',
-                    cursor: 'pointer',
+                    display: 'flex', flexDirection: 'column', alignItems: 'flex-start',
+                    padding: 6, borderRadius: 8, cursor: 'pointer',
+                    border: isSelected ? '1.5px solid var(--studio-ink)'
+                      : isToday ? '1.5px solid var(--studio-border-light)'
+                      : '0.5px solid var(--studio-border-light)',
+                    background: 'var(--studio-panel)',
                     opacity: isCurrentMonth ? 1 : 0.35,
-                    minHeight: 0,
-                    overflow: 'hidden',
+                    minHeight: 0, overflow: 'hidden',
                     boxShadow: isSelected ? '0 0 0 1px var(--studio-ink)' : 'none',
+                    gap: 2,
                   }}
                   whileHover={{ background: 'var(--studio-sidebar)' }}
                 >
-                  {/* Day number + status */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 4, width: '100%' }}>
+                  {/* Day number */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 3, width: '100%', marginBottom: 1 }}>
                     <span style={{
-                      fontSize: 13,
-                      fontWeight: isToday ? 600 : 400,
+                      fontSize: 12, fontWeight: isToday ? 600 : 400,
                       color: isToday ? 'var(--studio-ink)' : isCurrentMonth ? 'var(--studio-ink)' : 'var(--studio-ink-4)',
                     }}>
                       {day.getDate()}
                     </span>
                     {isToday && (
-                      <span style={{
-                        width: 5, height: 5, borderRadius: '50%',
-                        background: 'var(--studio-ink)', flexShrink: 0,
-                      }} />
+                      <span style={{ width: 4, height: 4, borderRadius: '50%', background: 'var(--studio-ink)', flexShrink: 0 }} />
                     )}
-                    {status === 'draft' && (
-                      <span style={{
-                        width: 6, height: 6, borderRadius: '50%',
-                        background: '#FBBF24', flexShrink: 0, marginLeft: 'auto',
-                      }} />
-                    )}
-                    {status === 'sent' && (
-                      <Check
-                        size={12}
-                        color="#22C55E"
-                        strokeWidth={2.5}
-                        style={{ marginLeft: 'auto', flexShrink: 0 }}
-                      />
+                    {dayPosts.length > 0 && (
+                      <span style={{ fontSize: 9, color: 'var(--studio-ink-4)', marginLeft: 'auto' }}>
+                        {dayPosts.length}
+                      </span>
                     )}
                   </div>
 
-                  {/* Platform pills */}
-                  {platforms.length > 0 && (
-                    <div style={{ display: 'flex', gap: 2, marginTop: 4, flexWrap: 'wrap' }}>
-                      {platforms.map((p) => {
-                        const c = PLATFORM_COLOURS[p] || { bg: '#F3F4F6', text: '#374151' }
-                        return (
-                          <span
-                            key={p}
-                            style={{
-                              fontSize: 9,
-                              fontWeight: 500,
-                              padding: '1px 4px',
-                              borderRadius: 4,
-                              background: c.bg,
-                              color: c.text,
-                              lineHeight: '14px',
-                            }}
-                          >
-                            {p.slice(0, 2).toUpperCase()}
+                  {/* Post blocks — one per scheduled post */}
+                  {dayPosts.slice(0, 3).map((post) => {
+                    const pc = PLATFORM_COLOURS[post.platform] || { bg: '#F3F4F6', text: '#374151' }
+                    const statusColor = STATUS_COLOURS[post.status] || '#374151'
+                    return (
+                      <div key={post.id} style={{
+                        width: '100%', display: 'flex', alignItems: 'center', gap: 3,
+                        padding: '1px 4px', borderRadius: 3,
+                        background: pc.bg, fontSize: 8, lineHeight: '14px',
+                        borderLeft: `2px solid ${statusColor}`,
+                      }}>
+                        <span style={{ color: pc.text, fontWeight: 600 }}>
+                          {post.platform.slice(0, 2).toUpperCase()}
+                        </span>
+                        {post.scheduled_at && (
+                          <span style={{ color: pc.text, opacity: 0.7 }}>
+                            {formatTime(post.scheduled_at)}
                           </span>
-                        )
-                      })}
-                    </div>
+                        )}
+                      </div>
+                    )
+                  })}
+                  {dayPosts.length > 3 && (
+                    <span style={{ fontSize: 8, color: 'var(--studio-ink-4)', paddingLeft: 4 }}>
+                      +{dayPosts.length - 3} more
+                    </span>
                   )}
                 </motion.button>
               )

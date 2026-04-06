@@ -1,8 +1,9 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { ArrowLeft, Clock, Hash, Check, Sparkles, Loader2, RefreshCw, ImageIcon, Upload } from 'lucide-react'
+import { ArrowLeft, Clock, Hash, Check, Sparkles, Loader2, RefreshCw, ImageIcon, Upload, CreditCard } from 'lucide-react'
 import type { Post } from '@/types/database'
 
 const PLATFORMS = [
@@ -41,6 +42,7 @@ function formatDate(dateStr: string): string {
 }
 
 export function DayEditor({ date, posts, workspaceId, onBack, onPostCreated }: DayEditorProps) {
+  const router = useRouter()
   const [brief, setBrief] = useState('')
   const [selectedPlatforms, setSelectedPlatforms] = useState<Record<string, boolean>>({
     instagram: true,
@@ -151,6 +153,15 @@ export function DayEditor({ date, posts, workspaceId, onBack, onPostCreated }: D
     setImageError('')
   }
 
+  function navigateToCardGenerator(caption: string, hashtags: string[]) {
+    const params = new URLSearchParams()
+    params.set('caption', caption)
+    if (hashtags.length > 0) {
+      params.set('hashtags', hashtags.join(' '))
+    }
+    router.push(`/cards?${params.toString()}`)
+  }
+
   const canGenerate = brief.trim().length > 0 && workspaceId && activePlatforms.length > 0 && !generating
 
   return (
@@ -228,12 +239,39 @@ export function DayEditor({ date, posts, workspaceId, onBack, onPostCreated }: D
                     {post.caption || 'No caption'}
                   </p>
                   {post.hashtags && post.hashtags.length > 0 && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 8 }}>
                       <Hash size={10} color="var(--studio-ink-4)" />
                       <span style={{ fontSize: 11, color: 'var(--studio-ink-4)' }}>
                         {post.hashtags.slice(0, 5).join(' ')}
                       </span>
                     </div>
+                  )}
+                  {/* Create Card button */}
+                  {post.caption && (
+                    <button
+                      onClick={() => navigateToCardGenerator(post.caption, post.hashtags || [])}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: 6,
+                        padding: '7px 14px', borderRadius: 6, cursor: 'pointer',
+                        border: '1px solid var(--studio-border-light)',
+                        background: 'var(--studio-bg)', color: 'var(--studio-ink-2)',
+                        fontSize: 12, fontWeight: 500, fontFamily: 'var(--studio-sans)',
+                        transition: 'all 0.15s',
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = 'var(--studio-ink)'
+                        e.currentTarget.style.color = '#FFFFFF'
+                        e.currentTarget.style.borderColor = 'var(--studio-ink)'
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = 'var(--studio-bg)'
+                        e.currentTarget.style.color = 'var(--studio-ink-2)'
+                        e.currentTarget.style.borderColor = 'var(--studio-border-light)'
+                      }}
+                    >
+                      <CreditCard size={13} />
+                      Create Card
+                    </button>
                   )}
                 </div>
               )
@@ -311,20 +349,36 @@ export function DayEditor({ date, posts, workspaceId, onBack, onPostCreated }: D
             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           }}>
             Caption
-            <button
-              onClick={handleGenerate}
-              disabled={generating}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 4,
-                fontSize: 11, fontWeight: 500, color: 'var(--studio-ink-3)',
-                background: 'none', border: 'none', cursor: generating ? 'not-allowed' : 'pointer',
-                fontFamily: 'var(--studio-sans)', textTransform: 'none', letterSpacing: 'normal',
-                opacity: generating ? 0.5 : 1,
-              }}
-            >
-              <RefreshCw size={11} className={generating ? 'animate-spin' : ''} />
-              Regenerate
-            </button>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button
+                onClick={() => navigateToCardGenerator(generatedCaption, generatedHashtags)}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 4,
+                  fontSize: 11, fontWeight: 500, color: 'var(--studio-ink)',
+                  background: 'none', border: '1px solid var(--studio-border-light)',
+                  borderRadius: 4, padding: '2px 8px',
+                  cursor: 'pointer', fontFamily: 'var(--studio-sans)',
+                  textTransform: 'none', letterSpacing: 'normal',
+                }}
+              >
+                <CreditCard size={11} />
+                Create Card
+              </button>
+              <button
+                onClick={handleGenerate}
+                disabled={generating}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 4,
+                  fontSize: 11, fontWeight: 500, color: 'var(--studio-ink-3)',
+                  background: 'none', border: 'none', cursor: generating ? 'not-allowed' : 'pointer',
+                  fontFamily: 'var(--studio-sans)', textTransform: 'none', letterSpacing: 'normal',
+                  opacity: generating ? 0.5 : 1,
+                }}
+              >
+                <RefreshCw size={11} className={generating ? 'animate-spin' : ''} />
+                Regenerate
+              </button>
+            </div>
           </div>
           <textarea
             value={generatedCaption}

@@ -5,20 +5,20 @@ import { usePathname } from 'next/navigation'
 import { motion } from 'framer-motion'
 import {
   Calendar,
-  Sparkles,
   BarChart3,
   MessageSquare,
-  Settings,
+  UserPlus,
+  CreditCard,
   Plus,
 } from 'lucide-react'
 import { useWorkspace } from '@/hooks/use-workspace'
 
 const navItems = [
   { label: 'Calendar', href: '/', icon: Calendar },
-  { label: 'Generate', href: '/generate', icon: Sparkles },
+  { label: 'Cards', href: '/cards', icon: CreditCard },
   { label: 'Analytics', href: '/analytics', icon: BarChart3 },
   { label: 'Replies', href: '/replies', icon: MessageSquare },
-  { label: 'Settings', href: '/settings', icon: Settings },
+  { label: 'New Creator', href: '/new-creator', icon: UserPlus },
 ]
 
 const fade = (i: number) => ({
@@ -62,7 +62,7 @@ export function Sidebar() {
               color: '#FFFFFF',
             }}
           >
-            A
+            CJ
           </div>
           <div>
             <div
@@ -73,18 +73,15 @@ export function Sidebar() {
                 lineHeight: 1,
               }}
             >
-              Aventus
-            </div>
-            <div style={{ fontSize: 12, color: 'var(--studio-ink-3)', marginTop: 2 }}>
-              Creator Studio
+              CJ Client Socials
             </div>
           </div>
         </div>
       </motion.div>
 
-      {/* Weekly generation button */}
+      {/* New Post button */}
       <div style={{ padding: '0 12px 12px' }}>
-        <Link href="/generate" style={{ textDecoration: 'none' }}>
+        <Link href="/cards" style={{ textDecoration: 'none' }}>
           <motion.button
             style={{
               width: '100%',
@@ -105,12 +102,12 @@ export function Sidebar() {
             whileTap={{ scale: 0.98 }}
           >
             <Plus size={15} strokeWidth={2} />
-            Weekly Generation
+            New Post
           </motion.button>
         </Link>
       </div>
 
-      {/* Company/Creator switcher */}
+      {/* Client switcher */}
       {workspaces.length > 0 && (
         <motion.div
           style={{ padding: '0 12px 8px' }}
@@ -126,7 +123,7 @@ export function Sidebar() {
               padding: '0 8px 8px',
             }}
           >
-            COMPANIES / CREATORS
+            CLIENTS
           </div>
           {workspaces.map((ws) => {
             const isWsActive = ws.id === active?.id

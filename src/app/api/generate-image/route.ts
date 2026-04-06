@@ -23,8 +23,31 @@ export async function POST(request: Request) {
 
   try {
     if (quality === 'premium') {
-      // FLUX Dev via fal.ai — left for separate task
-      return NextResponse.json({ error: 'Premium generation not yet configured' }, { status: 501 })
+      // FLUX Dev via fal.ai
+      const falKey = process.env.FALAI_API_KEY || process.env.FAL_KEY || ''
+      if (!falKey) {
+        return NextResponse.json({
+          error: 'FAL.ai API key not configured. Add FALAI_API_KEY to your .env.local file. Get a key at fal.ai/dashboard/keys',
+        }, { status: 501 })
+      }
+
+      const { fal } = await import('@fal-ai/client')
+      fal.config({ credentials: falKey })
+
+      const result = await fal.subscribe('fal-ai/flux/dev', {
+        input: {
+          prompt,
+          image_size: 'portrait_4_3',
+          num_images: 1,
+        },
+      })
+
+      const images = (result as { data: { images: { url: string }[] } }).data?.images
+      if (!images?.[0]?.url) {
+        return NextResponse.json({ error: 'FLUX Dev returned no image. Try a different prompt.' }, { status: 500 })
+      }
+
+      return NextResponse.json({ url: images[0].url, provider: 'flux-dev' })
     }
 
     // Free — Gemini Imagen 3 via @google/genai
@@ -38,7 +61,7 @@ export async function POST(request: Request) {
 
     const base64 = result.generatedImages?.[0]?.image?.imageBytes
     if (!base64) {
-      return NextResponse.json({ error: 'Imagen returned no image' }, { status: 500 })
+      return NextResponse.json({ error: 'Imagen returned no image. Try a different prompt.' }, { status: 500 })
     }
 
     return NextResponse.json({ base64, provider: 'imagen' })
